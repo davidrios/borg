@@ -8,20 +8,30 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #include "_endian.h"
 
 #define MAGIC "BORG_IDX"
 #define MAGIC_LEN 8
 
+#ifdef _WIN32
+#pragma pack(push)
+#endif
 typedef struct {
     char magic[MAGIC_LEN];
     int32_t num_entries;
     int32_t num_buckets;
     int8_t  key_size;
     int8_t  value_size;
+#ifdef _WIN32
+} HashHeader;
+#pragma pack(pop)
+#else
 } __attribute__((__packed__)) HashHeader;
+#endif
 
 typedef struct {
     void *buckets;
@@ -71,7 +81,7 @@ static int hash_sizes[] = {
 #define EMPTY _htole32(0xffffffff)
 #define DELETED _htole32(0xfffffffe)
 
-#define BUCKET_ADDR(index, idx) (index->buckets + ((idx) * index->bucket_size))
+#define BUCKET_ADDR(index, idx) ((char *)index->buckets + ((idx) * index->bucket_size))
 
 #define BUCKET_MATCHES_KEY(index, idx, key) (memcmp(key, BUCKET_ADDR(index, idx), index->key_size) == 0)
 
@@ -171,7 +181,7 @@ hashindex_resize(HashIndex *index, int capacity)
         return 0;
     }
     while((key = hashindex_next_key(index, key))) {
-        if(!hashindex_set(new, key, key + key_size)) {
+        if(!hashindex_set(new, key, (char *)key + key_size)) {
             /* This can only happen if there's a bug in the code calculating capacity */
             hashindex_free(new);
             return 0;
@@ -598,7 +608,7 @@ hashindex_next_key(HashIndex *index, const void *key)
 {
     int idx = 0;
     if(key) {
-        idx = 1 + (key - index->buckets) / index->bucket_size;
+        idx = 1 + ((char *)key - (char *)index->buckets) / index->bucket_size;
     }
     if (idx == index->num_buckets) {
         return NULL;
@@ -683,7 +693,17 @@ hashindex_size(HashIndex *index)
 /*
  * Used by the FuseVersionsIndex.
  */
+#ifdef _WIN32
+#pragma pack(push)
+#endif
 typedef struct {
     uint32_t version;
     char hash[16];
+#ifdef _WIN32
+} FuseVersionsElement;
+#else
 } __attribute__((__packed__)) FuseVersionsElement;
+#endif
+#ifdef _WIN32
+#pragma pack(pop)
+#endif

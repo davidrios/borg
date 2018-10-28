@@ -231,7 +231,7 @@ cdef class NSIndex(IndexBase):
             key = hashindex_get(self.index, <char *>marker)
             if marker is None:
                 raise IndexError
-            iter.key = key - self.key_size
+            iter.key = <char *>key - self.key_size
         return iter
 
 
@@ -257,7 +257,7 @@ cdef class NSKeyIterator:
         if not self.key:
             self.exhausted = 1
             raise StopIteration
-        cdef uint32_t *value = <uint32_t *>(self.key + self.key_size)
+        cdef uint32_t *value = <uint32_t *>(<char *>self.key + self.key_size)
         cdef uint32_t segment = _le32toh(value[0])
         assert segment <= _MAX_VALUE, "maximum number of segments reached"
         return (<char *>self.key)[:self.key_size], (segment, _le32toh(value[1]))
@@ -348,7 +348,7 @@ cdef class ChunkIndex(IndexBase):
             key = hashindex_get(self.index, <char *>marker)
             if marker is None:
                 raise IndexError
-            iter.key = key - self.key_size
+            iter.key = <char *>key - self.key_size
         return iter
 
     def summarize(self):
@@ -362,7 +362,7 @@ cdef class ChunkIndex(IndexBase):
             if not key:
                 break
             unique_chunks += 1
-            values = <uint32_t*> (key + self.key_size)
+            values = <uint32_t*> (<char *>key + self.key_size)
             refcount = _le32toh(values[0])
             assert refcount <= _MAX_VALUE, "invalid reference count"
             chunks += refcount
@@ -396,7 +396,7 @@ cdef class ChunkIndex(IndexBase):
             key = hashindex_next_key(self.index, key)
             if not key:
                 break
-            our_values = <const uint32_t*> (key + self.key_size)
+            our_values = <const uint32_t*> (<char *>key + self.key_size)
             master_values = <const uint32_t*> hashindex_get(master, key)
             if not master_values:
                 raise ValueError('stats_against: key contained in self but not in master_index.')
@@ -446,7 +446,7 @@ cdef class ChunkIndex(IndexBase):
             key = hashindex_next_key(other.index, key)
             if not key:
                 break
-            self._add(key, <uint32_t*> (key + self.key_size))
+            self._add(key, <uint32_t*> (<char *>key + self.key_size))
 
     def zero_csize_ids(self):
         cdef void *key = NULL
@@ -456,7 +456,7 @@ cdef class ChunkIndex(IndexBase):
             key = hashindex_next_key(self.index, key)
             if not key:
                 break
-            values = <uint32_t*> (key + self.key_size)
+            values = <uint32_t*> (<char *>key + self.key_size)
             refcount = _le32toh(values[0])
             assert refcount <= _MAX_VALUE, "invalid reference count"
             if _le32toh(values[2]) == 0:
@@ -487,7 +487,7 @@ cdef class ChunkKeyIterator:
         if not self.key:
             self.exhausted = 1
             raise StopIteration
-        cdef uint32_t *value = <uint32_t *>(self.key + self.key_size)
+        cdef uint32_t *value = <uint32_t *>(<char *>self.key + self.key_size)
         cdef uint32_t refcount = _le32toh(value[0])
         assert refcount <= _MAX_VALUE, "invalid reference count"
         return (<char *>self.key)[:self.key_size], ChunkIndexEntry(refcount, _le32toh(value[1]), _le32toh(value[2]))

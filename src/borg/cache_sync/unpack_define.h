@@ -23,6 +23,9 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#ifdef _WIN32
+#include <stdbool.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
