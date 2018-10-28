@@ -3,6 +3,7 @@ import contextlib
 import collections
 import enum
 import errno
+import getpass
 import hashlib
 import logging
 import io
@@ -121,7 +122,11 @@ class PythonLibcTooOld(Error):
 
 
 def check_python():
-    required_funcs = {os.stat, os.utime, os.chown}
+    if sys.platform == 'win32':
+        required_funcs = {os.stat}
+    else:
+        required_funcs = {os.stat, os.utime, os.chown}
+
     if not os.supports_follow_symlinks.issuperset(required_funcs):
         raise PythonLibcTooOld
 
@@ -674,7 +679,7 @@ def replace_placeholders(text):
         'hostname': hostname,
         'now': DatetimeWrapper(current_time.astimezone(None)),
         'utcnow': DatetimeWrapper(current_time),
-        'user': uid2user(os.getuid(), os.getuid()),
+        'user': getuser(),
         'uuid4': str(uuid.uuid4()),
         'borgversion': borg_version,
         'borgmajor': '%d' % borg_version_tuple[:1],
@@ -910,6 +915,12 @@ def uid2user(uid, default=None):
         return pwd.getpwuid(uid).pw_name
     except KeyError:
         return default
+
+
+def getuser():
+    if sys.platform == 'win32':
+        return getpass.getuser()
+    return uid2user(os.getuid(), os.getuid())
 
 
 @lru_cache(maxsize=None)
