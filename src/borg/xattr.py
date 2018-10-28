@@ -73,6 +73,8 @@ if libc_name is None:
         libc_name = 'libc.so'
     elif sys.platform == 'darwin':
         libc_name = 'libc.dylib'
+    elif sys.platform == 'win32':
+        pass
     else:
         msg = "Can't find C library. No fallback known. Try installing ldconfig, gcc/cc or objdump."
         print(msg, file=sys.stderr)  # logger isn't initialized at this stage
@@ -99,11 +101,15 @@ if sys.platform.startswith('linux'):
                 XATTR_FAKEROOT = True
             break
 
-try:
-    libc = CDLL(libc_name, use_errno=True)
-except OSError as e:
-    msg = "Can't find C library [%s]. Try installing ldconfig, gcc/cc or objdump." % e
-    raise Exception(msg)
+if sys.platform == 'win32':
+    import msvcrt
+    libc = msvcrt
+else:
+    try:
+        libc = CDLL(libc_name, use_errno=True)
+    except OSError as e:
+        msg = "Can't find C library [%s]. Try installing ldconfig, gcc/cc or objdump." % e
+        raise Exception(msg)
 
 
 def split_string0(buf):

@@ -3,7 +3,6 @@ import contextlib
 import collections
 import enum
 import errno
-import grp
 import hashlib
 import logging
 import io
@@ -11,7 +10,6 @@ import json
 import os
 import os.path
 import platform
-import pwd
 import re
 import shlex
 import signal
@@ -30,6 +28,9 @@ from itertools import islice
 from operator import attrgetter
 from string import Formatter
 from shutil import get_terminal_size
+if sys.platform != 'win32':
+    import grp
+    import pwd
 
 import msgpack
 import msgpack.fallback

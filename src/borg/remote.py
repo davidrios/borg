@@ -1,5 +1,4 @@
 import errno
-import fcntl
 import functools
 import inspect
 import json
@@ -15,6 +14,8 @@ import textwrap
 import time
 import traceback
 from subprocess import Popen, PIPE
+if sys.platform != 'win32':
+    import fcntl
 
 import msgpack
 

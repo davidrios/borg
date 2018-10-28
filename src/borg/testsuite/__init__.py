@@ -2,7 +2,6 @@ from contextlib import contextmanager
 import filecmp
 import functools
 import os
-import posix
 import stat
 import sys
 import sysconfig
@@ -10,6 +9,10 @@ import tempfile
 import time
 import uuid
 import unittest
+if sys.platform == 'win32':
+    posix = {}
+else:
+    import posix
 
 from ..xattr import get_all
 from ..platform import get_flags
