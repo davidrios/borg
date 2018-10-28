@@ -19,6 +19,7 @@ src/borg/_version.py
 *.pyc
 *.pyo
 *.so
+*.pyd
 .idea/
 .cache/
 borg.build/
