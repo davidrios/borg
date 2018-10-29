@@ -4,11 +4,10 @@ import stat
 import subprocess
 
 from ..helpers import posix_acl_use_stored_uid_gid
-from ..helpers import user2uid, group2gid
 from ..helpers import safe_decode, safe_encode
 from .base import SyncFile as BaseSyncFile
 from .base import safe_fadvise
-from .posix import swidth
+from .posix import user2uid, group2gid, swidth
 
 from libc cimport errno
 from libc.stdint cimport int64_t

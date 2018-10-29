@@ -3,7 +3,6 @@ import contextlib
 import collections
 import enum
 import errno
-import getpass
 import hashlib
 import logging
 import io
@@ -14,7 +13,6 @@ import platform
 import re
 import shlex
 import signal
-import socket
 import stat
 import subprocess
 import sys
@@ -24,14 +22,11 @@ import uuid
 from binascii import hexlify
 from collections import namedtuple, deque, abc, Counter
 from datetime import datetime, timezone, timedelta
-from functools import partial, lru_cache
+from functools import partial
 from itertools import islice
 from operator import attrgetter
 from string import Formatter
 from shutil import get_terminal_size
-if sys.platform != 'win32':
-    import grp
-    import pwd
 
 import msgpack
 import msgpack.fallback
@@ -122,11 +117,7 @@ class PythonLibcTooOld(Error):
 
 
 def check_python():
-    if sys.platform == 'win32':
-        required_funcs = {os.stat}
-    else:
-        required_funcs = {os.stat, os.utime, os.chown}
-
+    required_funcs = {os.stat, os.utime, os.chown}
     if not os.supports_follow_symlinks.issuperset(required_funcs):
         raise PythonLibcTooOld
 
@@ -670,7 +661,7 @@ def format_line(format, data):
 
 def replace_placeholders(text):
     """Replace placeholders in text with their values."""
-    from .platform import fqdn, hostname
+    from .platform import fqdn, hostname, get_user
     current_time = datetime.now(timezone.utc)
     data = {
         'pid': os.getpid(),
@@ -679,7 +670,7 @@ def replace_placeholders(text):
         'hostname': hostname,
         'now': DatetimeWrapper(current_time.astimezone(None)),
         'utcnow': DatetimeWrapper(current_time),
-        'user': getuser(),
+        'user': get_user(),
         'uuid4': str(uuid.uuid4()),
         'borgversion': borg_version,
         'borgmajor': '%d' % borg_version_tuple[:1],
@@ -907,44 +898,6 @@ class Buffer:
         if size is not None:
             self.resize(size, init)
         return self.buffer
-
-
-@lru_cache(maxsize=None)
-def uid2user(uid, default=None):
-    try:
-        return pwd.getpwuid(uid).pw_name
-    except KeyError:
-        return default
-
-
-def getuser():
-    if sys.platform == 'win32':
-        return getpass.getuser()
-    return uid2user(os.getuid(), os.getuid())
-
-
-@lru_cache(maxsize=None)
-def user2uid(user, default=None):
-    try:
-        return user and pwd.getpwnam(user).pw_uid
-    except KeyError:
-        return default
-
-
-@lru_cache(maxsize=None)
-def gid2group(gid, default=None):
-    try:
-        return grp.getgrgid(gid).gr_name
-    except KeyError:
-        return default
-
-
-@lru_cache(maxsize=None)
-def group2gid(group, default=None):
-    try:
-        return group and grp.getgrnam(group).gr_gid
-    except KeyError:
-        return default
 
 
 def posix_acl_use_stored_uid_gid(acl):

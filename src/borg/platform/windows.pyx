@@ -53,8 +53,10 @@ def sync_dir(path):
     for current, dirs, files in os.walk(path):
         for fname in files:
             fd = os.open(os.path.join(current, fname), os.O_RDWR | os.O_BINARY)
-            os.fsync(fd)
-            os.close(fd)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
 
 
 def get_path_free_space(path):

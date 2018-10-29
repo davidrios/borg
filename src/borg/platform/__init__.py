@@ -16,9 +16,9 @@ OS_API_VERSION = API_VERSION
 
 if sys.platform.startswith(('win32', )):
     from .windows import sync_dir, get_path_free_space
-    from .windows import process_alive, local_pid_alive
+    from .windows import process_alive, local_pid_alive, get_user
 else:
-    from .posix import process_alive, local_pid_alive
+    from .posix import process_alive, local_pid_alive, get_user
 
 if sys.platform.startswith('linux'):  # pragma: linux only
     from .linux import API_VERSION as OS_API_VERSION
@@ -34,3 +34,8 @@ elif sys.platform == 'darwin':  # pragma: darwin only
     from .darwin import API_VERSION as OS_API_VERSION
     from .darwin import acl_get, acl_set
     from .darwin import swidth
+
+if sys.platform.startswith(('win32', )):
+    from .windows import FileAttrs
+else:
+    from .posix_extra import FileAttrs

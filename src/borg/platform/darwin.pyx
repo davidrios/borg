@@ -1,8 +1,7 @@
 import os
 
-from ..helpers import user2uid, group2gid
 from ..helpers import safe_decode, safe_encode
-from .posix import swidth
+from .posix import user2uid, group2gid, swidth
 
 API_VERSION = '1.1_03'
 

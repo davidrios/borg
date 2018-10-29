@@ -178,7 +178,7 @@ class SaveFile:
 
 
 def get_path_free_space(path):
-    st_vfs = os.statvfs(self.path)
+    st_vfs = os.statvfs(path)
     # f_bavail: even as root - don't touch the Federal Block Reserve!
     return st_vfs.f_bavail * st_vfs.f_bsize
 

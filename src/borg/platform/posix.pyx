@@ -1,9 +1,48 @@
 import errno
+import grp
 import os
+import pwd
+from functools import lru_cache
 
 
 cdef extern from "wchar.h":
     cdef int wcswidth(const Py_UNICODE *str, size_t n)
+
+
+@lru_cache(maxsize=None)
+def uid2user(uid, default=None):
+    try:
+        return pwd.getpwuid(uid).pw_name
+    except KeyError:
+        return default
+
+
+@lru_cache(maxsize=None)
+def user2uid(user, default=None):
+    try:
+        return user and pwd.getpwnam(user).pw_uid
+    except KeyError:
+        return default
+
+
+@lru_cache(maxsize=None)
+def gid2group(gid, default=None):
+    try:
+        return grp.getgrgid(gid).gr_name
+    except KeyError:
+        return default
+
+
+@lru_cache(maxsize=None)
+def group2gid(group, default=None):
+    try:
+        return group and grp.getgrnam(group).gr_gid
+    except KeyError:
+        return default
+
+
+def get_user():
+    return uid2user(os.getuid(), os.getuid())
 
 
 def swidth(s):
