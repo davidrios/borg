@@ -23,7 +23,7 @@ from .helpers import secure_erase, truncate_and_unlink
 from .locking import Lock, LockError, LockErrorT
 from .logger import create_logger
 from .lrucache import LRUCache
-from .platform import SaveFile, SyncFile, sync_dir, safe_fadvise
+from .platform import SaveFile, SyncFile, sync_dir, safe_fadvise, get_path_free_space
 from .algorithms.checksums import crc32
 from .crypto.file_integrity import IntegrityCheckedFile, FileIntegrityError
 
@@ -637,13 +637,13 @@ class Repository:
             else:
                 # Keep one full worst-case segment free in non-append-only mode
                 required_free_space += full_segment_size
+
         try:
-            st_vfs = os.statvfs(self.path)
+            free_space = get_path_free_space(self.path)
         except OSError as os_error:
             logger.warning('Failed to check free space before committing: ' + str(os_error))
             return
-        # f_bavail: even as root - don't touch the Federal Block Reserve!
-        free_space = st_vfs.f_bavail * st_vfs.f_bsize
+
         logger.debug('check_free_space: required bytes {}, free bytes {}'.format(required_free_space, free_space))
         if free_space < required_free_space:
             if self.created:
