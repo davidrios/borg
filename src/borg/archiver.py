@@ -56,7 +56,7 @@ from .helpers import get_cache_dir
 from .helpers import Manifest
 from .helpers import hardlinkable
 from .helpers import StableDict
-from .helpers import check_python, check_extension_modules
+from .helpers import check_extension_modules
 from .helpers import dir_is_tagged, is_slow_msgpack, yes, sysinfo
 from .helpers import log_multi
 from .helpers import signal_handler, raising_signal_handler, SigHup, SigTerm
@@ -72,7 +72,7 @@ from .nanorst import rst_to_terminal
 from .patterns import ArgparsePatternAction, ArgparseExcludeFileAction, ArgparsePatternFileAction, parse_exclude_pattern
 from .patterns import PatternMatcher
 from .item import Item
-from .platform import get_flags, get_process_id, SyncFile
+from .platform import get_flags, get_process_id, SyncFile, check_python
 from .remote import RepositoryServer, RemoteRepository, cache_if_remote
 from .repository import Repository, LIST_SCAN_LIMIT, TAG_PUT, TAG_DELETE, TAG_COMMIT
 from .selftest import selftest

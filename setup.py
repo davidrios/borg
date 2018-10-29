@@ -47,6 +47,9 @@ install_requires = [
     # do it on your own risk (and after own testing).
 ]
 
+if sys.platform == 'win32':
+    install_requires.append('pywin32')
+
 # note for package maintainers: if you package borgbackup for distribution,
 # please add llfuse as a *requirement* on all platforms that have a working
 # llfuse package. "borg mount" needs llfuse to work.
@@ -86,7 +89,6 @@ platform_posix_source = 'src/borg/platform/posix.pyx'
 platform_linux_source = 'src/borg/platform/linux.pyx'
 platform_darwin_source = 'src/borg/platform/darwin.pyx'
 platform_freebsd_source = 'src/borg/platform/freebsd.pyx'
-platform_windows_source = 'src/borg/platform/windows.pyx'
 
 cython_sources = [
     compress_source,
@@ -100,7 +102,6 @@ cython_sources = [
     platform_linux_source,
     platform_freebsd_source,
     platform_darwin_source,
-    platform_windows_source,
 ]
 
 try:
@@ -129,7 +130,6 @@ try:
                 'src/borg/platform/linux.c',
                 'src/borg/platform/freebsd.c',
                 'src/borg/platform/darwin.c',
-                'src/borg/platform/windows.c',
             ])
             super().make_distribution()
 
@@ -148,12 +148,10 @@ except ImportError:
     platform_linux_source = platform_linux_source.replace('.pyx', '.c')
     platform_freebsd_source = platform_freebsd_source.replace('.pyx', '.c')
     platform_darwin_source = platform_darwin_source.replace('.pyx', '.c')
-    platform_windows_source = platform_windows_source.replace('.pyx', '.c')
     from distutils.command.build_ext import build_ext
     if not on_rtd and not all(os.path.exists(path) for path in [
         compress_source, crypto_ll_source, chunker_source, hashindex_source, item_source, checksums_source,
-        platform_posix_source, platform_linux_source, platform_freebsd_source, platform_darwin_source,
-        platform_windows_source]):
+        platform_posix_source, platform_linux_source, platform_freebsd_source, platform_darwin_source]):
         raise ImportError('The GIT version of Borg needs Cython. Install Cython or use a released version.')
 
 
@@ -799,9 +797,7 @@ if not on_rtd:
         Extension('borg.chunker', [chunker_source]),
         Extension('borg.algorithms.checksums', [checksums_source]),
     ]
-    if sys.platform.startswith(('win32', )):
-        ext_modules.append(Extension('borg.platform.windows', [platform_windows_source]))
-    else:
+    if not sys.platform.startswith(('win32', )):
         ext_modules.append(Extension('borg.platform.posix', [platform_posix_source]))
     if sys.platform == 'linux':
         ext_modules.append(Extension('borg.platform.linux', [platform_linux_source], libraries=['acl']))

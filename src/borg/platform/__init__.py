@@ -36,6 +36,6 @@ elif sys.platform == 'darwin':  # pragma: darwin only
     from .darwin import swidth
 
 if sys.platform.startswith(('win32', )):
-    from .windows import FileAttrs
+    from .windows import FileAttrs, check_python
 else:
-    from .posix_extra import FileAttrs
+    from .posix_extra import FileAttrs, check_python

@@ -5,23 +5,26 @@ import time
 from ..logger import create_logger
 logger = create_logger()
 
-from ..helpers import StableDict, safe_ns, set_ec, EXIT_WARNING
+from ..helpers import Error, StableDict, safe_ns, set_ec, EXIT_WARNING
 from .. import xattr
+from .base import BaseFileAttrs
 from .posix import uid2user, gid2group, user2uid, group2gid
 from . import acl_get, acl_set, get_flags, set_flags
 
 has_lchmod = hasattr(os, 'lchmod')
 
 
-class FileAttrs(object):
-    def __init__(self, backup_io, numeric_owner=True, noatime=False, noctime=False, nobirthtime=False, nobsdflags=False):
-        self.backup_io = backup_io
-        self.numeric_owner = numeric_owner
-        self.noatime = noatime
-        self.noctime = noctime
-        self.nobirthtime = nobirthtime
-        self.nobsdflags = nobsdflags
+class PythonLibcTooOld(Error):
+    """FATAL: this Python was compiled for a too old (g)libc and misses required functionality."""
 
+
+def check_python():
+    required_funcs = {os.stat, os.utime, os.chown}
+    if not os.supports_follow_symlinks.issuperset(required_funcs):
+        raise PythonLibcTooOld
+
+
+class FileAttrs(BaseFileAttrs):
     def stdin_attrs(self):
         uid, gid = 0, 0
         t = int(time.time()) * 1000000000

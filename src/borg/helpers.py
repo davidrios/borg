@@ -112,16 +112,6 @@ class InvalidPlaceholder(PlaceholderError):
     """Invalid placeholder "{}" in string: {}"""
 
 
-class PythonLibcTooOld(Error):
-    """FATAL: this Python was compiled for a too old (g)libc and misses required functionality."""
-
-
-def check_python():
-    required_funcs = {os.stat, os.utime, os.chown}
-    if not os.supports_follow_symlinks.issuperset(required_funcs):
-        raise PythonLibcTooOld
-
-
 class MandatoryFeatureUnsupported(Error):
     """Unsupported repository feature(s) {}. A newer version of borg is required to access this repository."""
 

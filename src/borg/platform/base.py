@@ -247,3 +247,13 @@ def process_alive(host, pid, thread):
 def local_pid_alive(pid):
     """Return whether *pid* is alive."""
     raise NotImplementedError
+
+
+class BaseFileAttrs(object):
+    def __init__(self, backup_io, numeric_owner=True, noatime=False, noctime=False, nobirthtime=False, nobsdflags=False):
+        self.backup_io = backup_io
+        self.numeric_owner = numeric_owner
+        self.noatime = noatime
+        self.noctime = noctime
+        self.nobirthtime = nobirthtime
+        self.nobsdflags = nobsdflags
