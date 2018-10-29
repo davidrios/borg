@@ -187,6 +187,12 @@ class SaveFile:
         platform.sync_dir(os.path.dirname(self.path))
 
 
+def get_path_free_space(path):
+    st_vfs = os.statvfs(self.path)
+    # f_bavail: even as root - don't touch the Federal Block Reserve!
+    return st_vfs.f_bavail * st_vfs.f_bsize
+
+
 def swidth(s):
     """terminal output width of string <s>
 
