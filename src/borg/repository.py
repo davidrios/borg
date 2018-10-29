@@ -539,7 +539,7 @@ class Repository:
             os.fsync(fd.fileno())
 
         def rename_tmp(file):
-            os.rename(file + '.tmp', file)
+            os.replace(file + '.tmp', file)
 
         hints = {
             b'version': 2,
@@ -1358,7 +1358,7 @@ class LoggedIO:
         if segment in self.fds:
             del self.fds[segment]
         backup_filename = filename + '.beforerecover'
-        os.rename(filename, backup_filename)
+        os.replace(filename, backup_filename)
         with open(backup_filename, 'rb') as backup_fd:
             # note: file must not be 0 size (windows can't create 0 size mapping)
             with mmap.mmap(backup_fd.fileno(), 0, access=mmap.ACCESS_READ) as mm:
