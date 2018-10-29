@@ -49,6 +49,14 @@ cdef extern from "Python.h":
     wchar_t* PyUnicode_AsWideCharString(object, Py_ssize_t *)
 
 
+def sync_dir(path):
+    for current, dirs, files in os.walk(path):
+        for fname in files:
+            fd = os.open(os.path.join(current, fname), os.O_RDWR | os.O_BINARY)
+            os.fsync(fd)
+            os.close(fd)
+
+
 def get_path_free_space(path):
     if type(path) is not unicode:
         raise TypeError('path must be a unicode string')

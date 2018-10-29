@@ -15,7 +15,7 @@ from .base import process_alive, get_process_id, local_pid_alive, fqdn, hostname
 OS_API_VERSION = API_VERSION
 
 if sys.platform.startswith(('win32', )):
-    from .windows import get_path_free_space
+    from .windows import sync_dir, get_path_free_space
     from .windows import process_alive, local_pid_alive
 else:
     from .posix import process_alive, local_pid_alive

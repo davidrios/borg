@@ -1,7 +1,6 @@
 import errno
 import os
 import socket
-import sys
 import uuid
 
 from borg.helpers import truncate_and_unlink
@@ -55,26 +54,17 @@ def get_flags(path, st):
     return getattr(st, 'st_flags', 0)
 
 
-
-if sys.platform == 'win32':
-    def sync_dir(path):
-        for current, dirs, files in os.walk(path):
-            for fname in files:
-                fd = os.open(os.path.join(current, fname), os.O_RDWR | os.O_BINARY)
-                os.fsync(fd)
-                os.close(fd)
-else:
-    def sync_dir(path):
-        fd = os.open(path, os.O_RDONLY)
-        try:
-            os.fsync(fd)
-        except OSError as os_error:
-            # Some network filesystems don't support this and fail with EINVAL.
-            # Other error codes (e.g. EIO) shouldn't be silenced.
-            if os_error.errno != errno.EINVAL:
-                raise
-        finally:
-            os.close(fd)
+def sync_dir(path):
+    fd = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    except OSError as os_error:
+        # Some network filesystems don't support this and fail with EINVAL.
+        # Other error codes (e.g. EIO) shouldn't be silenced.
+        if os_error.errno != errno.EINVAL:
+            raise
+    finally:
+        os.close(fd)
 
 
 def safe_fadvise(fd, offset, len, advice):
