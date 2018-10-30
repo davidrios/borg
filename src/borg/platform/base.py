@@ -257,3 +257,8 @@ class BaseFileAttrs(object):
         self.noctime = noctime
         self.nobirthtime = nobirthtime
         self.nobsdflags = nobsdflags
+
+    def stat_attrs(self, st, path):
+        attrs = self.stat_simple_attrs(st, path)
+        attrs.update(self.stat_ext_attrs(st, path))
+        return attrs

@@ -1,15 +1,20 @@
 import os
+from getpass import getuser
 
 import pywintypes
 from win32api import OpenProcess, CloseHandle, GetDiskFreeSpaceEx
 from win32con import PROCESS_QUERY_INFORMATION, PROCESS_VM_READ
+from win32file import CreateFile, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING
+from win32file import FILE_ATTRIBUTE_NORMAL, FILE_FLAG_BACKUP_SEMANTICS
+from win32security import GetSecurityInfo, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION, LookupAccountSid
 from winerror import ERROR_INVALID_PARAMETER
 
+from ..helpers import safe_ns, StableDict
 from .base import BaseFileAttrs
 
 
 def get_user():
-    pass
+    return getuser()
 
 
 def check_python():
@@ -17,7 +22,49 @@ def check_python():
 
 
 class FileAttrs(BaseFileAttrs):
-    pass
+    def stat_simple_attrs(self, st, path):
+        attrs = dict(
+            mode=st.st_mode,
+            uid=st.st_uid,
+            gid=st.st_gid,
+            mtime=safe_ns(st.st_mtime_ns),
+        )
+        # borg can work with archives only having mtime (older attic archives do not have
+        # atime/ctime). it can be useful to omit atime/ctime, if they change without the
+        # file content changing - e.g. to get better metadata deduplication.
+        if not self.noatime:
+            attrs['atime'] = safe_ns(st.st_atime_ns)
+        if not self.noctime:
+            attrs['ctime'] = safe_ns(st.st_ctime_ns)
+        if not self.nobirthtime and hasattr(st, 'st_birthtime'):
+            # sadly, there's no stat_result.st_birthtime_ns
+            attrs['birthtime'] = safe_ns(int(st.st_birthtime * 10**9))
+
+        if os.path.isdir(path):
+            flags_attrs = FILE_FLAG_BACKUP_SEMANTICS
+        else:
+            flags_attrs = FILE_ATTRIBUTE_NORMAL
+
+        fhandle = CreateFile(path, GENERIC_READ, FILE_SHARE_READ, None, OPEN_EXISTING, flags_attrs, None)
+
+        try:
+            sec_desc = GetSecurityInfo(fhandle, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION)
+            owner = sec_desc.GetSecurityDescriptorOwner()
+            name, host, use = LookupAccountSid(None, owner)
+            attrs['user'] = name
+
+            group = sec_desc.GetSecurityDescriptorGroup()
+            if group is not None:
+                name, host, use = LookupAccountSid(None, group)
+
+            attrs['group'] = name
+        finally:
+            CloseHandle(fhandle)
+
+        return attrs
+
+    def stat_ext_attrs(self, st, path):
+        return {}
 
 
 def sync_dir(path):

@@ -35,7 +35,7 @@ class FileAttrs(BaseFileAttrs):
             mtime=t, atime=t, ctime=t,
         )
 
-    def stat_simple_attrs(self, st):
+    def stat_simple_attrs(self, st, path):
         attrs = dict(
             mode=st.st_mode,
             uid=st.st_uid,
@@ -71,11 +71,6 @@ class FileAttrs(BaseFileAttrs):
             attrs['xattrs'] = StableDict(xattrs)
         if bsdflags:
             attrs['bsdflags'] = bsdflags
-        return attrs
-
-    def stat_attrs(self, st, path):
-        attrs = self.stat_simple_attrs(st)
-        attrs.update(self.stat_ext_attrs(st, path))
         return attrs
 
     def restore_attrs(self, path, item, symlink=False, fd=None):

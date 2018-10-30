@@ -869,7 +869,7 @@ Utilization of max. archive size: {csize_max:.0%}
                 else:
                     status = 'M' if known else 'A'  # regular file, modified or added
                 item.hardlink_master = hardlinked
-                item.update(self.file_attrs.stat_simple_attrs(st))
+                item.update(self.file_attrs.stat_simple_attrs(st, path))
                 # Only chunkify the file if needed
                 if chunks is not None:
                     item.chunks = chunks
