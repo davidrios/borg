@@ -25,7 +25,7 @@ from datetime import datetime, timezone, timedelta
 from functools import partial
 from itertools import islice
 from operator import attrgetter
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from string import Formatter
 from shutil import get_terminal_size
 
@@ -1888,7 +1888,7 @@ class ItemFormatter(BaseFormatter):
         item_data['group'] = item.group or item.gid
         item_data['uid'] = item.uid
         item_data['gid'] = item.gid
-        item_data['path'] = remove_surrogates(item.path)
+        item_data['path'] = str(Path(remove_surrogates(item.path)))
         if self.json_lines:
             item_data['healthy'] = 'chunks_healthy' not in item
         else:
