@@ -9,6 +9,7 @@ from functools import partial
 from getpass import getuser
 from io import BytesIO
 from itertools import groupby
+from pathlib import PurePath
 from shutil import get_terminal_size
 
 import msgpack
@@ -307,6 +308,7 @@ class Archive:
             end = datetime.utcnow()
         self.end = end
         self.consider_part_files = consider_part_files
+        self.is_windows = sys.platform == 'win32'
         self.pipeline = DownloadPipeline(self.repository, self.key)
         self.create = create
         if self.create:
@@ -735,6 +737,10 @@ Utilization of max. archive size: {csize_max:.0%}
 
     @contextmanager
     def create_helper(self, path, st, status=None, hardlinkable=True):
+        if self.is_windows:
+            pure_path = PurePath(path)
+            path = pure_path.as_posix()[len(pure_path.drive):]
+
         safe_path = make_path_safe(path)
         item = Item(path=safe_path)
         hardlink_master = False
