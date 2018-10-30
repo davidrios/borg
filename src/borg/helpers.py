@@ -25,6 +25,7 @@ from datetime import datetime, timezone, timedelta
 from functools import partial
 from itertools import islice
 from operator import attrgetter
+from pathlib import PurePath
 from string import Formatter
 from shutil import get_terminal_size
 
@@ -931,6 +932,7 @@ class Location:
     """Object representing a repository / archive location
     """
     proto = user = _host = port = path = archive = None
+    is_windows = False
 
     # user must not contain "@", ":" or "/".
     # Quoting adduser error message:
@@ -1023,10 +1025,34 @@ class Location:
 
     def _parse(self, text):
         def normpath_special(p):
+            if sys.platform == 'win32':
+                return p
             # avoid that normpath strips away our relative path hack and even makes p absolute
             relative = p.startswith('/./')
             p = os.path.normpath(p)
             return ('/.' + p) if relative else p
+
+        if sys.platform == 'win32':
+            pure_path = PurePath(text)
+
+            if pure_path.anchor.startswith('\\\\'):
+                raise ValueError('Windows network paths are not supported.')
+
+            if pure_path.drive != '':
+                if not pure_path.name:
+                    raise ValueError('Invalid Windows path')
+
+                self.is_windows = True
+                self.proto = 'file'
+
+                m = re.match(r'^(?P<path>.+?)' + self.optional_archive_re, pure_path.name, re.VERBOSE)
+                if m:
+                    self.archive = m.group('archive')
+                    self.path = str(pure_path.parent / m.group('path'))
+                else:
+                    self.path = str(pure_path)
+
+                return True
 
         m = self.ssh_re.match(text)
         if m:
