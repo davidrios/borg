@@ -1,13 +1,15 @@
 import os
+from datetime import datetime
 from getpass import getuser
 
 import pywintypes
 from win32api import OpenProcess, CloseHandle, GetDiskFreeSpaceEx
 from win32con import PROCESS_QUERY_INFORMATION, PROCESS_VM_READ
-from win32file import CreateFile, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING
+from win32file import CreateFile, SetFileTime, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING
 from win32file import FILE_ATTRIBUTE_NORMAL, FILE_FLAG_BACKUP_SEMANTICS
 from win32security import GetSecurityInfo, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION, LookupAccountSid
 from winerror import ERROR_INVALID_PARAMETER
+from winnt import FILE_WRITE_ATTRIBUTES
 
 from ..helpers import safe_ns, StableDict
 from .base import BaseFileAttrs
@@ -65,6 +67,36 @@ class FileAttrs(BaseFileAttrs):
 
     def stat_ext_attrs(self, st, path):
         return {}
+
+    def restore_attrs(self, path, item, symlink=False, fd=None):
+        """
+        Restore filesystem attributes on *path* (*fd*) from *item*.
+
+        Does not access the repository.
+        """
+        self.backup_io.op = 'attrs'
+
+        # TODO: restore permissions
+
+        mtime = item.mtime
+        if 'atime' in item:
+            atime = item.atime
+        else:
+            # old archives only had mtime in item metadata
+            atime = mtime
+
+        if os.path.isdir(path):
+            flags_attrs = FILE_FLAG_BACKUP_SEMANTICS
+        else:
+            flags_attrs = FILE_ATTRIBUTE_NORMAL
+
+        fhandle = CreateFile(path, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, None, OPEN_EXISTING, flags_attrs, None)
+
+        try:
+            SetFileTime(fhandle, *[datetime.fromtimestamp(i / 1000000000.) if i else None
+                                   for i in [item.ctime, atime, mtime]])
+        finally:
+            CloseHandle(fhandle)
 
 
 def sync_dir(path):

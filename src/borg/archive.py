@@ -604,7 +604,11 @@ Utilization of max. archive size: {csize_max:.0%}
                         pos = item_chunks_size = fd.tell()
                         fd.truncate(pos)
                         fd.flush()
-                        self.file_attrs.restore_attrs(path, item, fd=fd.fileno())
+                        if self.is_windows:
+                            fd.close()
+                            self.file_attrs.restore_attrs(path, item)
+                        else:
+                            self.file_attrs.restore_attrs(path, item, fd=fd.fileno())
                 if 'size' in item:
                     item_size = item.size
                     if item_size != item_chunks_size:
