@@ -2,16 +2,20 @@ import os
 from datetime import datetime
 from getpass import getuser
 
+from ..logger import create_logger
+logger = create_logger()
+
 import pywintypes
 from win32api import OpenProcess, CloseHandle, GetDiskFreeSpaceEx
 from win32con import PROCESS_QUERY_INFORMATION, PROCESS_VM_READ
 from win32file import CreateFile, SetFileTime, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING
 from win32file import FILE_ATTRIBUTE_NORMAL, FILE_FLAG_BACKUP_SEMANTICS
-from win32security import GetSecurityInfo, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION, LookupAccountSid
+from win32security import GetSecurityInfo, SetSecurityInfo, LookupAccountSid, LookupAccountName
+from win32security import SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION
 from winerror import ERROR_INVALID_PARAMETER
-from winnt import FILE_WRITE_ATTRIBUTES
+from winnt import FILE_WRITE_ATTRIBUTES, WRITE_OWNER
 
-from ..helpers import safe_ns, StableDict
+from ..helpers import safe_ns, StableDict, set_ec, EXIT_WARNING
 from .base import BaseFileAttrs
 
 
@@ -24,6 +28,16 @@ def check_python():
 
 
 class FileAttrs(BaseFileAttrs):
+    def __init__(self, backup_io, numeric_owner=True, noatime=False, noctime=False, nobirthtime=False, nobsdflags=False):
+        self._account_cache = {}
+        super().__init__(
+            backup_io,
+            numeric_owner=numeric_owner,
+            noatime=noatime,
+            noctime=noctime,
+            nobirthtime=nobirthtime,
+            nobsdflags=nobsdflags)
+
     def stat_simple_attrs(self, st, path):
         attrs = dict(
             mode=st.st_mode,
@@ -76,8 +90,6 @@ class FileAttrs(BaseFileAttrs):
         """
         self.backup_io.op = 'attrs'
 
-        # TODO: restore permissions
-
         mtime = item.mtime
         if 'atime' in item:
             atime = item.atime
@@ -90,9 +102,24 @@ class FileAttrs(BaseFileAttrs):
         else:
             flags_attrs = FILE_ATTRIBUTE_NORMAL
 
-        fhandle = CreateFile(path, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, None, OPEN_EXISTING, flags_attrs, None)
+        fhandle = CreateFile(path, FILE_WRITE_ATTRIBUTES | WRITE_OWNER, FILE_SHARE_READ, None, OPEN_EXISTING, flags_attrs, None)
 
         try:
+            for name in (item.user, item.group):
+                if name not in self._account_cache:
+                    res = LookupAccountName(None, name)
+                    if res is not None:
+                        res = res[0]
+
+                    self._account_cache[name] = res
+
+            try:
+                SetSecurityInfo(fhandle, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION,
+                                self._account_cache[item.user], self._account_cache[item.group])
+            except pywintypes.error as ex:
+                logger.warning('%s: Error when setting file owner: %s', path, str(ex))
+                set_ec(EXIT_WARNING)
+
             SetFileTime(fhandle, *[datetime.fromtimestamp(i / 1000000000.) if i else None
                                    for i in [item.ctime, atime, mtime]])
         finally:
