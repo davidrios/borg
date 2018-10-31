@@ -24,6 +24,7 @@ from binascii import unhexlify
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from itertools import zip_longest
+from pathlib import Path
 
 from .logger import create_logger, setup_logging
 
@@ -738,7 +739,7 @@ class Archiver:
             pi = None
 
         for item in archive.iter_items(filter, preload=True):
-            orig_path = item.path
+            item.path = orig_path = str(Path(item.path))
             if strip_components:
                 item.path = os.sep.join(orig_path.split(os.sep)[strip_components:])
             if not args.dry_run:
