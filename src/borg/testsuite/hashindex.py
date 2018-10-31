@@ -55,6 +55,8 @@ class HashIndexTestCase(BaseTestCase):
             self.assert_raises(KeyError, idx.__delitem__, H(x))
         self.assert_equal(len(idx), 50)
         idx_name = tempfile.NamedTemporaryFile()
+        idx_name.close()
+
         idx.write(idx_name.name)
         del idx
         # Verify file contents
@@ -82,6 +84,8 @@ class HashIndexTestCase(BaseTestCase):
     def test_resize(self):
         n = 2000  # Must be >= MIN_BUCKETS
         idx_name = tempfile.NamedTemporaryFile()
+        idx_name.close()
+
         idx = NSIndex()
         idx.write(idx_name.name)
         initial_size = os.path.getsize(idx_name.name)
