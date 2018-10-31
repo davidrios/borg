@@ -1033,7 +1033,12 @@ class Location:
             return ('/.' + p) if relative else p
 
         if sys.platform == 'win32':
-            pure_path = PurePath(text)
+            pfix = 'file://'
+            text2 = text
+            if text.startswith(pfix):
+                text2 = text[len(pfix):]
+
+            pure_path = PurePath(text2)
 
             if pure_path.anchor.startswith('\\\\'):
                 raise ValueError('Windows network paths are not supported.')
