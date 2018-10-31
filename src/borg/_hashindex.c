@@ -17,21 +17,15 @@
 #define MAGIC "BORG_IDX"
 #define MAGIC_LEN 8
 
-#ifdef _WIN32
-#pragma pack(push)
-#endif
+#pragma pack(push, 1)
 typedef struct {
     char magic[MAGIC_LEN];
     int32_t num_entries;
     int32_t num_buckets;
     int8_t  key_size;
     int8_t  value_size;
-#ifdef _WIN32
 } HashHeader;
 #pragma pack(pop)
-#else
-} __attribute__((__packed__)) HashHeader;
-#endif
 
 typedef struct {
     void *buckets;
@@ -693,17 +687,9 @@ hashindex_size(HashIndex *index)
 /*
  * Used by the FuseVersionsIndex.
  */
-#ifdef _WIN32
-#pragma pack(push)
-#endif
+#pragma pack(push, 1)
 typedef struct {
     uint32_t version;
     char hash[16];
-#ifdef _WIN32
 } FuseVersionsElement;
-#else
-} __attribute__((__packed__)) FuseVersionsElement;
-#endif
-#ifdef _WIN32
 #pragma pack(pop)
-#endif
